@@ -1,0 +1,4 @@
+load '/nfs/users/nfs_a/am26/git/rnaseqEvaluation/bpipe-scripts/ccle_run_setup/ccle_run_setup.wfl'
+Bpipe.run{
+        fusionScripts + ['DOV13', 'DSH1'] * [getSampleName + createDir + irods + cramToBam + bpipeParams + runFusionPipeline ]
+    }
