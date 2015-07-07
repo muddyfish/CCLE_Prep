@@ -1,4 +1,0 @@
-load '/nfs/users/nfs_a/am26/git/rnaseqEvaluation/bpipe-scripts/ccle_run_setup/ccle_run_setup.wfl'
-    Bpipe.run{
-        fusionScripts + ['COR-L95_RNA_TCGA','D-283Med_RNA_TCGA'] * [getSampleName + createDir + externalLinks + bpipeParams + runFusionPipeline ]
-    }
