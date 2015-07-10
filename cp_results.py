@@ -7,10 +7,13 @@ cp_extentions = ["html", "txt"]
 
 class Main(object):
     def __init__(self):
+        files = []
         for mode in ["internal", "external"]:
             for f in self.copy_mode(mode):
-                print f
-                self.copy_file(mode, f)
+                files.append((mode, f))
+        for i, f in enumerate(files):
+            print "%d%%"%((float(i)/len(files))*100), f[1]
+            self.copy_file(*f)
 
     def copy_file(self, mode, f):
         filename = os.path.basename(f)
