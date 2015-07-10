@@ -7,12 +7,13 @@ TRACKING_MASTER_FILE_BACKUP = "cell-lines-tracking-MASTER.txt.backup"
 
 BATCH_ID = "internal"
 assert(BATCH_ID in ["internal", "external"])
-NO_SAMPLES = 2
+NO_SAMPLES = 25
 
 class Main(object):
     def __init__(self):
         """Setup the RNA-Seq fusion pipeline
-Outputs a bpipe command that will start the pipeline""" 
+Outputs a bpipe command that will start the pipeline"""
+        cwd = os.getcwd()
         self.batch_path = os.path.join(CCLE_DIR, BATCH_ID)
         self.master_filename = os.path.join(CCLE_DIR, TRACKING_ID, TRACKING_MASTER_FILE)
         self.master_file = open(self.master_filename, "r") 
@@ -39,6 +40,7 @@ Outputs a bpipe command that will start the pipeline"""
                 job_names[i:] = [sys.argv[i+1]]*(3-i)
         bpipe_command = self.prepare_bpipe_command(run_filename, job_names)
         #Write sample names to last line in file
+        os.chdir(cwd)
         sample_names_file = open("sample_names.txt", "a")
         sample_names_file.write(json.dumps(self.sample_names)+"\n")
         sample_names_file.close()

@@ -32,12 +32,22 @@ class Main(object):
         if self.batch_id == "internal":
             self.cleanup()
         #Output results
+        for i in zip(self.sample_names, self.samples_complete, self.samples_failed):
+            print i
         print sum(self.samples_complete), "/", len(self.samples_complete), "samples complete"
 
     def cleanup(self):
         deleted = 0
+        master = open(os.path.join(CCLE_DIR, "tracking", "cell-lines-tracking-MASTER.txt"), "r+")
         for sample_name, complete in zip(self.sample_names, self.samples_complete):
             if complete:
+                master.seek(0)
+                while 1:
+                    line = master.readline()
+                    if line.split("\t")[0] == sample_name:
+                        master.seek(-5, 1)
+                        master.write("DONE")
+                    if line == "": break
                 deleted += 1
                 data_dir = os.path.join(self.batch_path, sample_name, "data")
                 for f in glob.glob(os.path.join(data_dir, "*")):
@@ -45,6 +55,7 @@ class Main(object):
                     os.remove(f)
                 else:
                     deleted -= 1
+        master.close()
         print "In the cleanup step, %d samples were deleted"%deleted
 
     def check_sample_files(self, file_list, sample):
@@ -55,7 +66,7 @@ class Main(object):
             except TypeError: #If the path doesn't have a %s in it
                 exists = os.path.exists(os.path.join(results_path, req_file))
             if not exists:
-                #print sample, req_file, "NOT FOUND"
+                #print sample, os.path.join(results_path, req_file), "NOT FOUND"
                 return False
         return True
 
