@@ -21,60 +21,79 @@ cp_extentions = ["html", "txt"]
 
 class Main(object):
     def __init__(self):
+        #Load the last line of the sample names as json.
+        #The rest of it is for archive purposes only
         self.sample_names_file = open("sample_names.txt")
-        #Hackish way to load the sample names without using eval
-        #It's pretty much a json file but with single quotes
         self.sample_names = json.loads(self.sample_names_file.readlines()[-1])
         self.sample_names_file.close()
+        #Decide if the samples are internal or external
         self.batch_id = self.get_external()
+        #Where are the samples located
         self.batch_path = os.path.join(CCLE_DIR, self.batch_id)
         #For each sample, does it meet the 'complete' criteria?
         self.samples_complete = map(functools.partial(self.check_sample_files, COMPLETED_FILES), self.sample_names)
         #For each sample, does it meet the 'failed' criteria?
         self.samples_failed  = map(functools.partial(self.check_sample_files, TMP_FILES), self.sample_names)
         #Cleanup
-        if self.batch_id == "internal":
-            self.cleanup()
+        self.cleanup(delete_input = self.batch_id == "internal")
         #Output results
         for i in zip(self.sample_names, self.samples_complete, self.samples_failed):
             print i
         print sum(self.samples_complete), "/", len(self.samples_complete), "samples complete"
 
-    def cleanup(self):
-        deleted = 0
-        copied = 0
+    def cleanup(self, delete_input):
+        samples_deleted = 0
+        samples_copied = 0
+        #Master tracking file that contains the sample list
         master = open(os.path.join(CCLE_DIR, "tracking", "cell-lines-tracking-MASTER.txt"), "r+")
-        for sample_name, complete in zip(self.sample_names, self.samples_complete):
-            if complete:
-                copied+=self.copy_results(sample_name)
+        for sample_name, sample_complete in zip(self.sample_names, self.samples_complete):
+            if sample_complete:
+                samples_copied += self.copy_results(sample_name)
                 self.update_spreadsheet(master, sample_name)
-                if self.cleanup_delete(sample_name):
-                    deleted += 1
+                if delete_input and self.cleanup_delete(sample_name):
+                    samples_deleted += 1
         master.close()
-        print "In the cleanup step, %d samples were deleted, %d samples had their spreadsheet data updated and %d files were copied"%(deleted, sum(self.samples_complete), copied)
+        print "In the cleanup step, " \
+              "%d samples were deleted, " \
+              "%d samples had their spreadsheet data updated and " \
+              "%d files were copied" \
+              %(samples_deleted, sum(self.samples_complete), samples_copied)
 
     def cleanup_delete(self, sample_name):
+        #Find the correct data directory
         data_dir = os.path.join(self.batch_path, sample_name, "data")
+        deleted = False
         for f in glob.glob(os.path.join(data_dir, "*")):
             os.remove(f)
-        else: return False
-        return True
+            deleted = True
+        #Return if files were deleted
+        return deleted
 
     def update_spreadsheet(self, master, sample_name):
+        #Goto the beginning of master
         master.seek(0)
         while 1:
             line = master.readline()
+            #If the line coresponds to the current sample
             if line.split("\t")[0] == sample_name:
+                #Seek backwards
                 master.seek(-5, 1)
+                #Replace NEXT with DONE
                 master.write("DONE")
+            #If EOF, end
             if line == "": break
 
     def copy_results(self, sample_name):
         files = []
         for ext in cp_extentions:
-            files.extend(glob.glob(os.path.join(self.batch_path, sample_name, "results", "*.%s"%ext)))
+            #Glob expression for finding files in the results directory that have the correct extention
+            expression = os.path.join(self.batch_path, sample_name, "results", "*.%s"%ext)
+            #Add the matching files to the list
+            files.extend(glob.glob(expression))
+        #Copy them
         for f in files:
             shutil.copy2(f, os.path.join(DEST_DIR, os.path.basename(f)))
+        #Return the number of files copied
         return len(files)
 
     def check_sample_files(self, file_list, sample):
