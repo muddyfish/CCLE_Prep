@@ -52,7 +52,7 @@ class Main(object):
         template = template_pipeline_file.read()
         template_pipeline_file.close()
         #Replacing spaces might be nessasary
-        sample_names = str(sample_names)
+        sample_names = repr(map(str, sample_names))
         os.chdir(self.batch_path)
         #Get the filename to be used for the run file using today's date
         filename = datetime.date.today().strftime("ccle_"+ self.batch_id[:3] +"_%d%m%Y.run")
