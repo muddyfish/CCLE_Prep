@@ -27,21 +27,20 @@ class Main(object):
         self.sample_names = json.loads(self.sample_names_file.readlines()[-1])
         self.sample_names_file.close()
         #Decide if the samples are internal or external
-        self.batch_id = self.get_external()
+        self.sample_batches = self.get_external()
         #Where are the samples located
-        self.batch_path = os.path.join(CCLE_DIR, self.batch_id)
         #For each sample, does it meet the 'complete' criteria?
         self.samples_complete = map(functools.partial(self.check_sample_files, COMPLETED_FILES), self.sample_names)
         #For each sample, does it meet the 'failed' criteria?
         self.samples_failed  = map(functools.partial(self.check_sample_files, TMP_FILES), self.sample_names)
         #Cleanup
-        self.cleanup(delete_input = self.batch_id == "internal")
+        self.cleanup()
         #Output results
         for i in zip(self.sample_names, self.samples_complete, self.samples_failed):
             print i
         print sum(self.samples_complete), "/", len(self.samples_complete), "samples complete"
 
-    def cleanup(self, delete_input):
+    def cleanup(self):
         samples_deleted = 0
         samples_copied = 0
         #Master tracking file that contains the sample list
@@ -50,7 +49,7 @@ class Main(object):
             if sample_complete:
                 samples_copied += self.copy_results(sample_name)
                 self.update_spreadsheet(master, sample_name)
-                if delete_input and self.cleanup_delete(sample_name):
+                if self.sample_batches[sample_name] == "internal" and self.cleanup_delete(sample_name):
                     samples_deleted += 1
         master.close()
         print "In the cleanup step, " \
@@ -61,7 +60,7 @@ class Main(object):
 
     def cleanup_delete(self, sample_name):
         #Find the correct data directory
-        data_dir = os.path.join(self.batch_path, sample_name, "data")
+        data_dir = os.path.join(self.sample_batches[sample_name], sample_name, "data")
         deleted = False
         for f in glob.glob(os.path.join(data_dir, "*")):
             os.remove(f)
@@ -87,7 +86,7 @@ class Main(object):
         files = []
         for ext in cp_extentions:
             #Glob expression for finding files in the results directory that have the correct extention
-            expression = os.path.join(self.batch_path, sample_name, "results", "*.%s"%ext)
+            expression = os.path.join(self.sample_batches[sample_name], sample_name, "results", "*.%s"%ext)
             #Add the matching files to the list
             files.extend(glob.glob(expression))
         #Copy them
@@ -97,7 +96,7 @@ class Main(object):
         return len(files)
 
     def check_sample_files(self, file_list, sample):
-        results_path = os.path.join(self.batch_path, sample, "results")
+        results_path = os.path.join(self.sample_batches[sample], sample, "results")
         for req_file in file_list:
             try:
                 exists = os.path.exists(os.path.join(results_path, req_file%sample))
@@ -110,10 +109,12 @@ class Main(object):
 
     def get_external(self): 
         #Does the sample name contain the external signature?
-        #NOTE: Only checks the first sample name, samples must be all external or all internal
-        if self.sample_names[0][-9:] == "_RNA_TCGA":
-            return "external"
-        return "internal"
+        sample_batches = {}
+        int_path = os.path.join(CCLE_DIR, "internal")
+        ext_path = os.path.join(CCLE_DIR, "external")
+        for sample in self.sample_names:
+            sample_batches[sample] = {True: ext_path, False: int_path}[sample[-9:] == "_RNA_TCGA"]
+        return sample_batches
 
 def main():
     Main()
