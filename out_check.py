@@ -37,7 +37,9 @@ class Main(object):
         self.cleanup()
         #Output results
         for i in zip(self.sample_names, self.samples_complete, self.samples_failed):
-            print i
+            
+            if self.sample_batches[i[0]] == "/lustre/scratch112/sanger/cgppipe/cttv-rnaseq-am26/ccle-fusions/internal" and i[1] == False:
+                print i
         print sum(self.samples_complete), "/", len(self.samples_complete), "samples complete"
 
     def cleanup(self):
@@ -90,10 +92,14 @@ class Main(object):
             #Add the matching files to the list
             files.extend(glob.glob(expression))
         #Copy them
+        copied = 0
         for f in files:
-            shutil.copy2(f, os.path.join(DEST_DIR, os.path.basename(f)))
+            dest = os.path.join(DEST_DIR, os.path.basename(f))
+            if not os.path.isfile(dest):
+                shutil.copy2(f, dest)
+                copied+=1
         #Return the number of files copied
-        return len(files)
+        return copied
 
     def check_sample_files(self, file_list, sample):
         results_path = os.path.join(self.sample_batches[sample], sample, "results")
