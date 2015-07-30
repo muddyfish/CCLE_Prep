@@ -37,9 +37,7 @@ class Main(object):
         self.cleanup()
         #Output results
         for i in zip(self.sample_names, self.samples_complete, self.samples_failed):
-            
-            if self.sample_batches[i[0]] == "/lustre/scratch112/sanger/cgppipe/cttv-rnaseq-am26/ccle-fusions/internal" and i[1] == False:
-                print i
+            if i[1] == False: print i
         print sum(self.samples_complete), "/", len(self.samples_complete), "samples complete"
 
     def cleanup(self):
