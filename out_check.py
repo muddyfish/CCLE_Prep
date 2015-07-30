@@ -45,18 +45,22 @@ class Main(object):
         samples_copied = 0
         #Master tracking file that contains the sample list
         master = open(os.path.join(CCLE_DIR, "tracking", "cell-lines-tracking-MASTER.txt"), "r+")
+        new_samples = 0
         for sample_name, sample_complete in zip(self.sample_names, self.samples_complete):
             if sample_complete:
-                samples_copied += self.copy_results(sample_name)
+                sc = self.copy_results(sample_name)
+                if sc: new_samples += 1
+                samples_copied+= sc
                 self.update_spreadsheet(master, sample_name)
                 if self.sample_batches[sample_name] == "internal" and self.cleanup_delete(sample_name):
                     samples_deleted += 1
         master.close()
         print "In the cleanup step, " \
+              "%d new samples were processed, " \
               "%d samples were deleted, " \
               "%d samples had their spreadsheet data updated and " \
               "%d files were copied" \
-              %(samples_deleted, sum(self.samples_complete), samples_copied)
+              %(new_samples, samples_deleted, sum(self.samples_complete), samples_copied)
 
     def cleanup_delete(self, sample_name):
         #Find the correct data directory
