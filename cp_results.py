@@ -14,18 +14,22 @@ class Main(object):
         for mode in ["internal", "external"]:
             #Get the filenames for the sample
             for f in self.copy_mode(mode):
-                files.append((mode, f))
+                files.append([mode, f])
+        max_len = max([len(f[1]) for f in files])
+        for i, f in enumerate(files):
+            files[i][1] = files[i][1]+" "*(max_len-len(files[i][1]))
         #Actually copy them
         for i, f in enumerate(files):
             #Pretty print percentage complete
-            print "%d%%"%((float(i)/len(files))*100), f[1]
+            print "\r%d%%"%((float(i)/len(files))*100), f[1],
             #Copy the file
             self.copy_file(*f)
+        print
 
     def copy_file(self, mode, f):
-        filename = os.path.basename(f)
+        filename = os.path.basename(f.rstrip())
         dest = os.path.join(DEST_DIR, mode, filename)
-        shutil.copy2(f, dest)
+        shutil.copy2(f.rstrip(), dest)
 
     def copy_mode(self, mode):
         files = []

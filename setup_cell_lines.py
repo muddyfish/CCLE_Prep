@@ -5,9 +5,9 @@ TRACKING_ID = "tracking"
 TRACKING_MASTER_FILE = "cell-lines-tracking-MASTER.txt"
 TRACKING_MASTER_FILE_BACKUP = "cell-lines-tracking-MASTER.txt.backup"
 
-BATCH_ID = "external"
+BATCH_ID = "internal"
 assert(BATCH_ID in ["internal", "external"])
-NO_SAMPLES = 50
+NO_SAMPLES = 25
 
 class Main(object):
     def __init__(self):
